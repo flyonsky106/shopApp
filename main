@@ -1,0 +1,174 @@
+6889: function(e, t, a) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.useInvalidateOnBlock = void 0;
+        let r = a(1611)
+          , n = a(7294)
+          , i = a(156);
+        t.useInvalidateOnBlock = function({enabled: e, queryKey: t}) {
+            let a = (0,
+            r.useQueryClient)()
+              , [c,f] = (0,
+            n.useState)(void 0);
+            (0,
+            i.useBlock)({
+                refetchInterval: 5e3,
+                onSuccess: e ? async e=>{
+                    e.block_hash !== c && (await a.invalidateQueries(t, {
+                        refetchType: "all"
+                    }),
+                    f(e.block_hash))
+                }
+                : void 0
+            })
+        }
+    },
+    1107: function(e, t, a) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.useStarknetInvoke = void 0;
+        let r = a(1611);
+        t.useStarknetInvoke = function({contract: e, method: t}) {
+            let {data: a, isLoading: n, error: i, reset: c, mutateAsync: f} = (0,
+            r.useMutation)(function({contract: e, method: t}) {
+                return async({args: a, metadata: r, overrides: n})=>{
+                    if (void 0 === e)
+                        throw Error("No contract specified");
+                    if (void 0 === t)
+                        throw Error("No method specified");
+                    let i = await e.invoke(t, a, n);
+                    return console.warn("TODO: ignoring metadata", r),
+                    i
+                }
+            }({
+                contract: e,
+                method: t
+            }));
+            return {
+                data: a,
+                loading: n,
+                error: i ?? void 0,
+                reset: c,
+                invoke: f
+            }
+        }
+    },
+    159: function(e, t, a) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.useNetwork = void 0;
+        let r = a(7294)
+          , n = a(7145)
+          , i = a(9831);
+        t.useNetwork = function() {
+            let {library: e} = (0,
+            n.useStarknet)()
+              , t = (0,
+            r.useMemo)(()=>{
+                if (e)
+                    return (0,
+                    i.chainById)(e.chainId)
+            }
+            , [e]);
+            return {
+                chain: t
+            }
+        }
+    },
+    2932: function(e, t, a) {
+        "use strict";
+        Object.defineProperty(t, "__esModule", {
+            value: !0
+        }),
+        t.useTransactionReceipt = void 0;
+        let r = a(1611)
+          , n = a(7294)
+          , i = a(9745)
+          , c = a(6889);
+        t.useTransactionReceipt = function({hash: e, watch: t, onAcceptedOnL1: a, onAcceptedOnL2: f, onNotReceived: d, onPending: s, onReceived: o, onRejected: u}) {
+            let {library: b} = (0,
+            i.useStarknet)()
+              , h = (0,
+            n.useMemo)(()=>(function({library: e, hash: t}) {
+                return [{
+                    entity: "transactionReceipt",
+                    chainId: e.chainId,
+                    hash: t
+                }]
+            }
+            )({
+                library: b,
+                hash: e
+            }), [b, e])
+              , {data: l, isLoading: p, error: g, refetch: m} = (0,
+            r.useQuery)(h, function({library: e, hash: t}) {
+                return async()=>{
+                    if (!t)
+                        throw Error("hash is required");
+                    return await e.getTransactionReceipt(t)
+                }
+            }({
+                library: b,
+                hash: e
+            }), {
+                enabled: !!e,
+                refetchInterval: (e,a)=>!!t && function(e) {
+                    if (!e)
+                        return !1;
+                    let {status: t} = e;
+                    switch (t) {
+                    case "ACCEPTED_ON_L1":
+                    case "REJECTED":
+                    default:
+                        return !1;
+                    case "ACCEPTED_ON_L2":
+                        return 6e4;
+                    case "NOT_RECEIVED":
+                        return 500;
+                    case "PENDING":
+                    case "RECEIVED":
+                        return 5e3
+                    }
+                }(e),
+                onSuccess: e=>{
+                    let {status: t} = e;
+                    switch (t) {
+                    case "ACCEPTED_ON_L1":
+                        a && a(e);
+                        break;
+                    case "ACCEPTED_ON_L2":
+                        f && f(e);
+                        break;
+                    case "NOT_RECEIVED":
+                        d && d(e);
+                        break;
+                    case "PENDING":
+                        s && s(e);
+                        break;
+                    case "RECEIVED":
+                        o && o(e);
+                        break;
+                    case "REJECTED":
+                        u && u(e)
+                    }
+                }
+            });
+            return (0,
+            c.useInvalidateOnBlock)({
+                enabled: t,
+                queryKey: h
+            }),
+            {
+                data: l,
+                loading: p,
+                error: g ?? void 0,
+                refresh: m
+            }
+        }
+    },
